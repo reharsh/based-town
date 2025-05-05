@@ -11,5 +11,6 @@ export const authConfig: ExpressAuthConfig = {
             return `${process.env.FRONTEND_URL}/home`
          }
     },
+    adapter: DrizzleAdapter(db)
 }
 

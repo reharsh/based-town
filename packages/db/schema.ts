@@ -5,10 +5,12 @@ import {
     text,
     primaryKey,
     integer,
+    uuid,
   } from "drizzle-orm/pg-core"
   import postgres from "postgres"
   import { drizzle } from "drizzle-orm/postgres-js"
   import type { AdapterAccountType } from "@auth/core/adapters"
+import { isNotNull, sql } from "drizzle-orm"
    
   export const connectionString = process.env.AUTH_DRIZZLE_URL
   console.log(connectionString)
@@ -100,4 +102,13 @@ import {
         }),
       },
     ]
-  )
+ )
+
+export const towns = pgTable("town",{
+  id: text("id").primaryKey().$defaultFn(() => sql`uuid_generate_v4()`),
+  name: text("name"),
+  width: integer().notNull(),
+  height: integer().notNull(),
+  creatorId: integer().notNull().references(() => users.id,{ onDelete: "cascade"}),
+  thumbnail: text()
+})
