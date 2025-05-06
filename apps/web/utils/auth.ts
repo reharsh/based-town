@@ -9,3 +9,12 @@ export async function handleSignOut(){
         console.error("error caught while signing out: ", error)
     }
 }
+
+
+export async function handleSignIn(){
+    try {
+        await signIn("google")
+    } catch (error) {
+        console.error("error caught while signing out: ", error)
+    }
+}
