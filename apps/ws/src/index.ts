@@ -3,27 +3,33 @@ import { WebSocket } from 'ws';
 
 const wss = new WebSocketServer({ port: 8080 });
 
-let clientId = 0;
-const clients = new Map<number, WebSocket>();
+const clients = new Map<string, WebSocket>();
 
 wss.on('connection', (ws) => {
   ws.on('error', console.error);
+  let clientId: string | null = null;
 
-  const id = clientId++;
-  clients.set(id, ws);
 
   ws.on('message', (message) => {
-    for( const [clientId, client] of clients.entries()) {
-      if(client.readyState === WebSocket.OPEN && clientId!=id){
+    const data = JSON.parse(message.toString())
+    if(data.type === "join"){
+      clientId = data.clientId;
+      clients.set(clientId!, ws);
+      console.log("joined with: ", clientId)
+    }
+    else if (data.type === "move") {
+    for( const [otherId, client] of clients.entries()) {
+      if(client.readyState === WebSocket.OPEN && otherId!=clientId){
         client.send(message)
       }
     }
+   }
   });
 
 
   ws.on('close',()=>{
-    clients.delete(id)
+    if(clientId!=null){
+      clients.delete(clientId)
+    }
   })
-
-  ws.send('something');
 });
