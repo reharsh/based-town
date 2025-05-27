@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 
 const phaserGame = () => {
@@ -7,10 +7,20 @@ const phaserGame = () => {
 
     useEffect(()=>{
 
-        // Import Phaser dynamically inside the browser-only context
         const loadPhaser = async () => {
+        const response = await fetch('http://localhost:3001/ai/start', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ prompt: 'world war 2' }),
+        });
+        const json = await response.json();
+        console.log("json: ",json.object.quizzes)
+        const quizData = json.object.quizzes;
+        console.log("quizData: ", quizData);
+
         const Phaser = await import('phaser');
-  
         class MainScene extends Phaser.Scene {
           private socket!: WebSocket;
           private otherPlayers: Map<string, Phaser.GameObjects.Sprite> = new Map();
@@ -21,13 +31,17 @@ const phaserGame = () => {
           clientId!: string;
           dialogShown!: boolean;
           dialogBox!: Phaser.GameObjects.Text;
+          private quizzes: any[];
+          private dialogZones: Phaser.Types.Physics.Arcade.ImageWithStaticBody[] = [];
+          private currentQuiz: any;
   
-          constructor() {
+          constructor(quizzes: any[]) {
             super('MainScene');
+            this.quizzes = quizzes;
           }
   
           preload() {
-            this.load.image('background', '/background.png');
+            this.load.image('background', '/100xschool.png');
             this.load.spritesheet('player_idle', '/Adam_idle_anim_16x16.png', {
                 frameWidth: 16,
                 frameHeight: 32,
@@ -41,7 +55,13 @@ const phaserGame = () => {
               frameWidth: 96,
               frameHeight: 64,
           })
-          }
+
+          this.load.spritesheet('chests', '/chests.png', {
+            frameWidth: 24,
+            frameHeight: 24,
+          })
+          console.log("this quizzes in scene: ",this.quizzes)
+        }
   
           create() {
             this.camera = this.cameras.main;
@@ -116,9 +136,9 @@ const phaserGame = () => {
             
             this.player.anims.play('idle');
 
+            this.dialogZones = [];
 
-            const dialogZone = this.physics.add.staticImage(500,500,'pixel').setDisplaySize(100,100).refreshBody()
-
+            // Create dialog box first
             this.dialogBox = this.add.text(200, 50, '', {
               fontSize: '20px',
               color: '#ffffff',
@@ -127,16 +147,24 @@ const phaserGame = () => {
             })
             .setScrollFactor(0)
             .setDepth(1000)
-            .setVisible(false);  // initially hidden
+            .setVisible(false);
 
-            this.physics.add.overlap(this.player, dialogZone, () => {
-              if (!this.dialogShown) {
-                this.dialogShown = true;
-                this.dialogBox.setText("You found a house! Press E to enter.")
-                              .setVisible(true);
-              }
-            });
-
+            for (const quiz of this.quizzes) {
+              const zone = this.physics.add.staticImage(quiz.position.x, quiz.position.y, 'chests')
+                .setDisplaySize(100, 100)
+              this.dialogZones.push(zone);
+              console.log(this.dialogZones.length)
+            
+              this.physics.add.overlap(this.player, zone, () => {
+                if (!this.dialogShown) {
+                  this.dialogShown = true;
+                  this.dialogBox.setText(`You found quiz: "${quiz.level}"! Press E to start.`)
+                    .setVisible(true);
+                  // Store which quiz we're interacting with if needed
+                  this.currentQuiz = quiz;
+                }
+              });
+            }
           }
 
           update(time: number, delta: number): void {
@@ -147,7 +175,6 @@ const phaserGame = () => {
             moving = 'left';
             } else if (this.cursors.right.isDown) {
             this.player.setVelocityX(speed);
-            this.player.anims.play("walk_right")
             moving = 'right';
             }
 
@@ -189,7 +216,11 @@ const phaserGame = () => {
             if (this.dialogShown && this.input.keyboard?.addKey('E')?.isDown) {
               this.dialogBox.setVisible(false);
               this.dialogShown = false;
-              // Do something, like start cutscene or enter house
+            
+              if (this.currentQuiz) {
+                // Do something with this.currentQuiz
+                console.log("Starting quiz: ", this.currentQuiz);
+              }
             }
           }
 
@@ -220,10 +251,10 @@ const phaserGame = () => {
   
         const config: Phaser.Types.Core.GameConfig = {
           type: Phaser.AUTO,
-          width: 800,
+          width: 1000,
           height: 800,
           backgroundColor: '#000000',
-          scene: MainScene,
+          scene: new MainScene(quizData),
           parent: gameRef.current!,
           physics: {
             default: 'arcade',

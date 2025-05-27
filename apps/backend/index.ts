@@ -6,23 +6,20 @@ import { authConfig } from "./src/config/auth.config"
 import { authenticatedUser } from "./src/middlewares/auth.middleware"
 import type { Request, Response } from "express"
 import { signIn } from "./src/utils/auth"
+import aiRouter from "./src/routes/ai"
 
 const express = require('express')
 
 const app = express()
 
 app.use("/api/v1",v1Router)
+app.use("/ai",aiRouter)
 app.use(logger("dev"))
 
 
 
-app.use(cors({
-  origin: (origin, callback) => {
-    // Reflect request origin or allow if no origin (e.g. curl, Postman)
-    callback(null, origin || true);
-  },
-  credentials: true,
-}));
+// ✅ Apply CORS to all routes
+app.use(cors());
 
 app.get("/login", async (req:Request,res: Response) => {
     const resp = await signIn(req,res)

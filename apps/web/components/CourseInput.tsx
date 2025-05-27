@@ -19,7 +19,8 @@ const CourseInput = ({ onSubmit }: CourseInputProps) => {
 
   return (
     <div className="w-full max-w-2xl mx-auto mt-2 mb-12">
-      <h2 className="text-2xl font-medium text-center mb-6">What would you like to learn today?</h2>
+      <h2 className="text-2xl font-medium text-center mb-6">
+        What would you like to learn today?</h2>
       <form onSubmit={handleSubmit} className="relative">
         <Input
           type="text"
